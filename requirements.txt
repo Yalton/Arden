@@ -1,0 +1,6 @@
+SpeechRecognition
+gtts
+PyAudio
+mpg123
+openai
+requests
