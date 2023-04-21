@@ -4,3 +4,5 @@ PyAudio
 mpg123
 openai
 requests
+numpy
+configparser

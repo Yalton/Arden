@@ -7,7 +7,6 @@ import webbrowser
 import deepspeech
 import openai
 import numpy as np
-from o_ai_api import api_key
 import requests
 import configparser
 import datetime
