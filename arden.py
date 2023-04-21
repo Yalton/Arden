@@ -61,7 +61,10 @@ class VoiceAssistant:
 
     def recognize_speech(self):
         recognizer = sr.Recognizer()
-        with sr.Microphone(device_index=1) as source:
+        # recognizer.energy_threshold = 2000  # Adjust the energy threshold
+        # recognizer.pause_threshold = 0.8  # Adjust the pause threshold
+        with sr.Microphone() as source:
+            recognizer.adjust_for_ambient_noise(source, duration=1)
             print("Listening...")
             audio = recognizer.listen(source)
             try:
@@ -72,9 +75,9 @@ class VoiceAssistant:
 
     def listen_for_wake_word(self):
         recognizer = sr.Recognizer()
-        recognizer.energy_threshold = 2000  # Adjust the energy threshold
-        recognizer.pause_threshold = 0.8  # Adjust the pause threshold
-        with sr.Microphone(device_index=1) as source:
+        # recognizer.energy_threshold = 2000  # Adjust the energy threshold
+        # recognizer.pause_threshold = 0.8  # Adjust the pause threshold
+        with sr.Microphone() as source:
             recognizer.adjust_for_ambient_noise(source, duration=1)
             while True:
                 print("Waiting for wake word...")
