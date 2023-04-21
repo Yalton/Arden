@@ -4,7 +4,7 @@ import pyttsx3
 from tempfile import TemporaryFile
 import speech_recognition as sr
 import webbrowser
-import deepspeech
+#import deepspeech
 import openai
 import numpy as np
 import requests
