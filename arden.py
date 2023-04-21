@@ -64,7 +64,7 @@ class VoiceAssistant:
         # recognizer.energy_threshold = 2000  # Adjust the energy threshold
         # recognizer.pause_threshold = 0.8  # Adjust the pause threshold
         with sr.Microphone() as source:
-            recognizer.adjust_for_ambient_noise(source, duration=1)
+            #recognizer.adjust_for_ambient_noise(source, duration=1)
             print("Listening...")
             audio = recognizer.listen(source)
             try:
@@ -171,6 +171,9 @@ while True:
     command = assistant.recognize_speech()
     if command:
         assistant.execute_task(command)
+    else: 
+        assistant.speak_text("Sorry I did not hear your command")
+
 
 # openai.api_key = api_key
 
