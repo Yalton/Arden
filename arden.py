@@ -61,35 +61,39 @@ class VoiceAssistant:
 
     def recognize_speech(self):
         recognizer = sr.Recognizer()
-        # recognizer.energy_threshold = 2000  # Adjust the energy threshold
-        # recognizer.pause_threshold = 0.8  # Adjust the pause threshold
-        with sr.Microphone() as source:
-            #recognizer.adjust_for_ambient_noise(source, duration=1)
+        recognizer.energy_threshold = 2000  # Adjust the energy threshold
+        recognizer.pause_threshold = 0.8  # Adjust the pause threshold
+        recognizer.dynamic_energy_threshold = True  # Enable dynamic energy threshold
+        with sr.Microphone(device_index=1) as source:
+            recognizer.adjust_for_ambient_noise(source, duration=0.2)
+
             print("Listening...")
             audio = recognizer.listen(source)
             try:
                 command = recognizer.recognize_google(audio)
+                print(f"Heard: {command.lower()}")
                 return command.lower()
             except:
                 return None
 
     def listen_for_wake_word(self):
         recognizer = sr.Recognizer()
-        # recognizer.energy_threshold = 2000  # Adjust the energy threshold
-        # recognizer.pause_threshold = 0.8  # Adjust the pause threshold
-        with sr.Microphone() as source:
+        recognizer.energy_threshold = 2000  # Adjust the energy threshold
+        recognizer.pause_threshold = 0.8  # Adjust the pause threshold
+        recognizer.dynamic_energy_threshold = True  # Enable dynamic energy threshold
+        with sr.Microphone(device_index=1) as source:
             recognizer.adjust_for_ambient_noise(source, duration=1)
             while True:
                 print("Waiting for wake word...")
                 audio = recognizer.listen(source)
 
-                try:
-                    speech = recognizer.recognize_google(audio)
-                    print("Heard:", speech)
-                    if self.wake_word.lower() in speech.lower():
-                        return
-                except:
-                    pass
+               # try:
+                speech = recognizer.recognize_google(audio)
+                print("Heard:", speech)
+                if self.wake_word.lower() in speech.lower():
+                    return
+               # except:
+                #    pass
 
     def open_website(self, command):
         if 'google' in command:
@@ -140,6 +144,8 @@ class VoiceAssistant:
 
 
     def execute_task(self, command):
+        print(f"Executing {command}")
+        self.speak_text(f"Executing {command}")
         if 'open' in command:
             self.open_website(command)
         elif 'question' in command:
