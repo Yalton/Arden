@@ -11,6 +11,8 @@ import configparser
 import datetime
 import spacy
 from ctypes import *
+import subprocess
+import shlex
 
 # Set the error handler function to suppress ALSA errors.
 def alsa_error_handler(_, __, ___, ____, _____):
@@ -44,13 +46,21 @@ class VoiceAssistant:
         engine.setProperty('voice', voices[17].id)
         engine.say(text)
         engine.runAndWait()
-    
+
+    def save_speech_to_file(self, text, output_file):
+        engine = pyttsx3.init()
+        voices = engine.getProperty('voices')
+        engine.setProperty('voice', voices[17].id)
+        engine.save_to_file(text, output_file)
+        engine.runAndWait()
+
     def get_intent(self, command):
         doc = self.nlp(command)
         intents = {
             "open_website": ["open", "website"],
             "ask_question": ["question", "ask"],
             "get_time_and_date": ["time", "date"],
+            "set_alarm": ["alarm"],
             "get_weather": ["weather"]
         }
 
@@ -122,6 +132,35 @@ class VoiceAssistant:
         date_str = now.strftime("%A, %B %d, %Y")
         return f"It's {time_str} on {date_str}."
 
+    def extract_time_from_command(command):
+        nlp = spacy.load("en_core_web_sm")
+        doc = nlp(command)
+        time_entities = [ent for ent in doc.ents if ent.label_ == "TIME"]
+        
+        if len(time_entities) > 0:
+            return time_entities[0].text
+        else:
+            return None
+
+    def set_alarm(self, time_str):
+        # You can use a sound file or a script to be executed when the alarm goes off
+        self.save_speech_to_file(f"BEEP, BEEP, BEEP, BEEP, BEEP, BEEP, BEEP, BEEP, BEEP, BEEP, BEEP", "reminder.wav")
+
+        sound_file = "reminder.wav"
+        command = f"aplay {sound_file}"
+        
+        # Create the 'at' command to schedule the alarm
+        at_command = f"echo '{command}' | at {time_str}"
+        
+        # Execute the 'at' command using a subprocess
+        process = subprocess.Popen(shlex.split(at_command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        
+        if process.returncode == 0:
+            self.speak_text(f"Alarm has been set")
+        else:
+            self.speak_text(f"Failed to set alarm")
+
     def get_weather(self, city, api_key):
         base_url = "http://api.openweathermap.org/data/2.5/weather?"
         complete_url = f"{base_url}q={city}&appid={api_key}&units=metric"
@@ -170,6 +209,11 @@ class VoiceAssistant:
                 else:
                     print("Failed to fetch weather data.")
                     self.speak_text("I'm sorry, I couldn't fetch the weather data.")
+            elif intent == "set_alarm":
+                # Parse the time from the command, e.g., "set alarm at 9:30 AM"
+                time_str = self.extract_time_from_command
+                self.set_alarm(time_str)
+
         else:
             self.speak_text(f"Apologies command not recognized")
 

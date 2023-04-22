@@ -1,7 +1,7 @@
 import requests
 
 city = "Houston"
-api_key = "30d44e8b1ea3fd1ee4e9c72584a31116"
+api_key = input("Please supply API Key > ")
 
 base_url = "http://api.openweathermap.org/data/2.5/weather?"
 complete_url = f"{base_url}q={city}&appid={api_key}&units=metric"
