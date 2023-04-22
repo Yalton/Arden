@@ -4,44 +4,30 @@ import pyttsx3
 from tempfile import TemporaryFile
 import speech_recognition as sr
 import webbrowser
-#import deepspeech
 import openai
 import numpy as np
 import requests
 import configparser
 import datetime
+import spacy
+from ctypes import *
 
+# Set the error handler function to suppress ALSA errors.
+def alsa_error_handler(_, __, ___, ____, _____):
+    pass
 
-# model_path = './deepspeech/deepspeech-0.9.3-models.pbmm'
-# scorer_path = './deepspeech/deepspeech-0.9.3-models.scorer'
+# Load the ALSA shared library.
+alsa_lib = CDLL('libasound.so')
 
-# def transcribe_deepspeech(audio_data):
-#     print("Entered DeepSpeech")
-#     model = deepspeech.Model('deepspeech-0.9.3-models.pbmm')
-#     model.enableExternalScorer('deepspeech-0.9.3-models.scorer')
+# Get the error handler function.
+alsa_error_handler_func = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)(alsa_error_handler)
 
-#     # Adjust parameters
-#     model.setBeamWidth(500)
-#     model.setScorerAlphaBeta(alpha=0.75, beta=1.85)
-
-#     # Convert SpeechRecognition's audio data to the format required by DeepSpeech
-#     buffer = np.frombuffer(audio_data.frame_data, np.int16)
-
-#     # Perform speech-to-text using DeepSpeech
-#     text = model.stt(buffer)
-
-#     print(f"Deepspeech transcribed: {text}")
-#     return text
-
-
-# def speak_text(text):
-#     tts = gTTS(text, lang='en')
-#     with TemporaryFile() as temp_audio:
-#         tts.save(temp_audio.name)
-#         os.system(f"mpg123 {temp_audio.name}")
+# Set the error handler function.
+alsa_lib.snd_lib_error_set_handler(alsa_error_handler_func)
 
 class VoiceAssistant:
     def __init__(self):
+        self.nlp = spacy.load("en_core_web_sm")
         self.config = self.read_config()
         self.openweathermap_api_key = self.config.get("API_KEYS", "OpenWeatherMap")
         openai.api_key = self.config.get("API_KEYS", "OpenAI")
@@ -58,13 +44,31 @@ class VoiceAssistant:
         engine.setProperty('voice', voices[17].id)
         engine.say(text)
         engine.runAndWait()
+    
+    def get_intent(self, command):
+        doc = self.nlp(command)
+        intents = {
+            "open_website": ["open", "website"],
+            "ask_question": ["question", "ask"],
+            "get_time_and_date": ["time", "date"],
+            "get_weather": ["weather"]
+        }
+
+        for intent, keywords in intents.items():
+            for keyword in keywords:
+                if keyword in doc.text.lower():
+                    return intent
+
+        return None
+
+# device_index=1
 
     def recognize_speech(self):
         recognizer = sr.Recognizer()
         recognizer.energy_threshold = 2000  # Adjust the energy threshold
         recognizer.pause_threshold = 0.8  # Adjust the pause threshold
         recognizer.dynamic_energy_threshold = True  # Enable dynamic energy threshold
-        with sr.Microphone(device_index=1) as source:
+        with sr.Microphone() as source:
             recognizer.adjust_for_ambient_noise(source, duration=0.2)
 
             print("Listening...")
@@ -81,19 +85,18 @@ class VoiceAssistant:
         recognizer.energy_threshold = 2000  # Adjust the energy threshold
         recognizer.pause_threshold = 0.8  # Adjust the pause threshold
         recognizer.dynamic_energy_threshold = True  # Enable dynamic energy threshold
-        with sr.Microphone(device_index=1) as source:
+        with sr.Microphone() as source:
             recognizer.adjust_for_ambient_noise(source, duration=1)
             while True:
                 print("Waiting for wake word...")
                 audio = recognizer.listen(source)
-
-               # try:
-                speech = recognizer.recognize_google(audio)
-                print("Heard:", speech)
-                if self.wake_word.lower() in speech.lower():
-                    return
-               # except:
-                #    pass
+                try:
+                    speech = recognizer.recognize_google(audio)
+                    print("Heard:", speech)
+                    if self.wake_word.lower() in speech.lower():
+                        return
+                except:
+                    pass
 
     def open_website(self, command):
         if 'google' in command:
@@ -144,26 +147,29 @@ class VoiceAssistant:
 
 
     def execute_task(self, command):
-        print(f"Executing {command}")
-        self.speak_text(f"Executing {command}")
-        if 'open' in command:
-            self.open_website(command)
-        elif 'question' in command:
-            self.ask_chatgpt(command)
-        elif 'time' in command or 'date' in command:
-            time_and_date = self.get_current_time_and_date()
-            print(time_and_date)
-            self.speak_text(time_and_date)
-        elif "weather" in command:
-            city = "Houston"  # Replace this with the desired city or parse the city name from the command
-            weather_info = self.get_weather(city, self.openweathermap_api_key)
-            if weather_info:
-                response = f"The weather in {city} is as follows: Temperature: {weather_info['temperature']}°C, Humidity: {weather_info['humidity']}%, Pressure: {weather_info['pressure']} hPa, Description: {weather_info['description']}."
-                print(response)
-                self.speak_text(response)  # Use your TTS function to speak the response
-            else:
-                print("Failed to fetch weather data.")
-                self.speak_text("I'm sorry, I couldn't fetch the weather data.")
+        intent = self.get_intent(command)
+        if intent:
+            print(f"Processing {intent}")
+            self.speak_text(f"Processing command")
+
+            if intent == "open_website":
+                self.open_website(command)
+            elif intent == "ask_question":
+                self.ask_chatgpt(command)
+            elif intent == "get_time_and_date":
+                time_and_date = self.get_current_time_and_date()
+                print(time_and_date)
+                self.speak_text(time_and_date)
+            elif intent == "get_weather":
+                city = "Houston"  # Replace this with the desired city or parse the city name from the command
+                weather_info = self.get_weather(city, self.openweathermap_api_key)
+                if weather_info:
+                    response = f"The weather in {city} is as follows: Temperature: {weather_info['temperature']}°C, Humidity: {weather_info['humidity']}%, Pressure: {weather_info['pressure']} hPa, Description: {weather_info['description']}."
+                    print(response)
+                    self.speak_text(response)  # Use your TTS function to speak the response
+                else:
+                    print("Failed to fetch weather data.")
+                    self.speak_text("I'm sorry, I couldn't fetch the weather data.")
         else:
             self.speak_text(f"Apologies command not recognized")
 
@@ -272,3 +278,23 @@ while True:
 #         else:
 #             print("Couldn't recognize your command.")
 #             speak_text("I'm sorry, I couldn't recognize your command.")
+# model_path = './deepspeech/deepspeech-0.9.3-models.pbmm'
+# scorer_path = './deepspeech/deepspeech-0.9.3-models.scorer'
+
+# def transcribe_deepspeech(audio_data):
+#     print("Entered DeepSpeech")
+#     model = deepspeech.Model('deepspeech-0.9.3-models.pbmm')
+#     model.enableExternalScorer('deepspeech-0.9.3-models.scorer')
+
+#     # Adjust parameters
+#     model.setBeamWidth(500)
+#     model.setScorerAlphaBeta(alpha=0.75, beta=1.85)
+
+#     # Convert SpeechRecognition's audio data to the format required by DeepSpeech
+#     buffer = np.frombuffer(audio_data.frame_data, np.int16)
+
+#     # Perform speech-to-text using DeepSpeech
+#     text = model.stt(buffer)
+
+#     print(f"Deepspeech transcribed: {text}")
+#     return text

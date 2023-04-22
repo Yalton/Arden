@@ -3,3 +3,4 @@ espeak
 mpg123
 libasound2-dev
 flac
+python -m spacy download en_core_web_sm

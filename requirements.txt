@@ -8,3 +8,4 @@ numpy
 configparser
 pyttsx3
 deepspeech
+spacy
