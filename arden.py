@@ -69,6 +69,7 @@ class VoiceAssistant:
             audio = recognizer.listen(source)
             try:
                 command = recognizer.recognize_google(audio)
+                print(f"Heard: {command.lower()}")
                 return command.lower()
             except:
                 return None
@@ -140,6 +141,8 @@ class VoiceAssistant:
 
 
     def execute_task(self, command):
+        print(f"Executing {command}")
+        self.speak_text(f"Executing {command}")
         if 'open' in command:
             self.open_website(command)
         elif 'question' in command:
