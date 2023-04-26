@@ -10,21 +10,21 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/github_username/Arden">
+  <a href="https://github.com/Yalton/Arden">
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
   <h3 align="center">Arden - Raspberry Pi Voice Assistant</h3>
   <p align="center">
     A versatile voice assistant designed to run on a Raspberry Pi, offering a wide range of features and integrations.
     <br />
-    <a href="https://github.com/github_username/Arden"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/Yalton/Arden"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/github_username/Arden">View Demo</a>
+    <a href="https://github.com/Yalton/Arden">View Demo</a>
     ·
-    <a href="https://github.com/github_username/Arden/issues">Report Bug</a>
+    <a href="https://github.com/Yalton/Arden/issues">Report Bug</a>
     ·
-    <a href="https://github.com/github_username/Arden/issues">Request Feature</a>
+    <a href="https://github.com/Yalton/Arden/issues">Request Feature</a>
   </p>
 </div>
 <details>
@@ -158,12 +158,10 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-
-
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@yalt7117](https://twitter.com/yalt7117) - email@email_client.com
+Dalton Bailey - [@yalt7117](https://twitter.com/yalt7117) - drbailey117@gmail.com
 
 Project Link: [https://github.com/Yalton/Arden](https://github.com/Yalton/Arden)
 
@@ -197,7 +195,7 @@ Project Link: [https://github.com/Yalton/Arden](https://github.com/Yalton/Arden)
 [license-shield]: https://img.shields.io/github/license/Yalton/Arden.svg?style=for-the-badge
 [license-url]: https://github.com/Yalton/Arden/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/linkedin_username
+[linkedin-url]: https://linkedin.com/in/dalton-r-bailey
 [product-screenshot]: images/screenshot.png
 [Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
 [Next-url]: https://nextjs.org/
