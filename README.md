@@ -11,7 +11,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/Yalton/Arden">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    <img src="img/logo.png" alt="Logo" width="80" height="80">
   </a>
   <h3 align="center">Arden - Raspberry Pi Voice Assistant</h3>
   <p align="center">
