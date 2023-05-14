@@ -172,9 +172,9 @@ Project Link: [https://github.com/Yalton/Arden](https://github.com/Yalton/Arden)
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-* []()
-* []()
-* []()
+* [HomeAssistantDocs](https://developers.home-assistant.io/docs/api/rest/)
+<!-- * []()
+* []() -->
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
