@@ -41,6 +41,16 @@ class ArdenVA:
         self.city = self.config.get("Misc", "HomeCity")
         self.HA_Addr = self.config.get("Misc", "HomeAssistantIP")
 
+        # Add Spotify's client_id, client_secret and redirect_uri to your config file
+        self.spotify_client_id = self.config.get("Spotify", "SpotifyClientID")
+        self.spotify_client_secret = self.config.get("Spotify", "SpotifyClientSecret")
+        self.spotify_redirect_uri = self.config.get("Spotify", "SpotifyRedirectUri")
+        # Set up the SpotiPy client
+        self.spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=self.spotify_client_id,
+                                                                client_secret=self.spotify_client_secret,
+                                                                redirect_uri=self.spotify_redirect_uri,
+                                                                scope="user-read-playback-state, user-modify-playback-state"))
+
     def read_config(self):
         config = configparser.ConfigParser()
         config.read("config.ini")
@@ -72,7 +82,8 @@ class ArdenVA:
             "set_alarm": ["alarm"],
             "get_weather": ["weather"],
             "fetch_news": ["news", "headlines"],  
-            "home_automation": ["turn on", "turn off", "set temperature"] 
+            "home_automation": ["turn on", "turn off", "set temperature"], 
+            "play_song": ["play", "song", "music", "spotify"], 
 
 
         }
@@ -119,6 +130,15 @@ class ArdenVA:
                 except:
                     pass
 
+
+    def extract_song_name_from_command(self, command):
+        doc = self.nlp(command)
+        # Get all the noun chunks in the command
+        noun_chunks = list(doc.noun_chunks)
+        # Assume the song name is the longest noun chunk
+        song_name = max(noun_chunks, key=len)
+        return str(song_name)
+
     ######################################################
     # ARDEN VA TASKS
     ######################################################
@@ -140,7 +160,17 @@ class ArdenVA:
         print(output)
         self.speak_text(f"Answer: {output}")
 
-
+    def play_song(self, song_name):
+        """Play a song on Spotify"""
+        results = self.spotify.search(q=song_name, limit=1)
+        if results['tracks']['items']:                # Parse the song name from the command, e.g., "play Bohemian Rhapsody on Spotify"
+                song_name = self.extract_song_name_from_command(command)
+                self.play_song(song_name)
+            uri = results['tracks']['items'][0]['uri']
+            self.spotify.start_playback(uris=[uri])
+            self.speak_text(f"Playing {song_name} on Spotify")
+        else:
+            self.speak_text(f"Could not find {song_name} on Spotify")
 
     def get_current_time_and_date(self):
         now = datetime.datetime.now()
@@ -283,6 +313,10 @@ class ArdenVA:
                     print("Failed to fetch news.")
                     self.speak_text("I'm sorry, I couldn't fetch the news") 
 
+            elif intent == "play_song":
+                # Parse the song name from the command, e.g., "play Bohemian Rhapsody on Spotify"
+                song_name = self.extract_song_name_from_command(command)
+                self.play_song(song_name)
         else:
             self.speak_text(f"Apologies command not recognized")
 
