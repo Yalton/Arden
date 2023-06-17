@@ -31,6 +31,7 @@ alsa_error_handler_func = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_ch
 # Set the error handler function.
 alsa_lib.snd_lib_error_set_handler(alsa_error_handler_func)
 
+<<<<<<< HEAD
 template = """Assistant is a large language model trained by OpenAI.
 
 Assistant is designed to be able to assist with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. As a language model, Assistant is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.
@@ -47,12 +48,31 @@ Assistant:"""
 
 
 class VoiceAssistant:
+=======
+######################################################
+# ARDEN VA CLASS 
+######################################################
+class ArdenVA:
+>>>>>>> master
     def __init__(self):
         self.nlp = spacy.load("en_core_web_sm")
         self.config = self.read_config()
         self.openweathermap_api_key = self.config.get("API_KEYS", "OpenWeatherMap")
         openai.api_key = self.config.get("API_KEYS", "OpenAI")
+        self.newsapi_api_key = self.config.get("API_KEYS", "NewsAPI")  # Add your NewsAPI key here
         self.wake_word = "Arden"  # Set your wake word here
+        self.city = self.config.get("Misc", "HomeCity")
+        self.HA_Addr = self.config.get("Misc", "HomeAssistantIP")
+
+        # Add Spotify's client_id, client_secret and redirect_uri to your config file
+        self.spotify_client_id = self.config.get("Spotify", "SpotifyClientID")
+        self.spotify_client_secret = self.config.get("Spotify", "SpotifyClientSecret")
+        self.spotify_redirect_uri = self.config.get("Spotify", "SpotifyRedirectUri")
+        # Set up the SpotiPy client
+        self.spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=self.spotify_client_id,
+                                                                client_secret=self.spotify_client_secret,
+                                                                redirect_uri=self.spotify_redirect_uri,
+                                                                scope="user-read-playback-state, user-modify-playback-state"))
 
         prompt = PromptTemplate(
         input_variables=["history", "human_input"], 
@@ -73,6 +93,9 @@ class VoiceAssistant:
         config.read("config.ini")
         return config
 
+    ######################################################
+    # ARDEN VA AUDIO I/O HANDLING
+    ######################################################
     def speak_text(self, text):
         engine = pyttsx3.init()
         voices = engine.getProperty('voices')
@@ -94,8 +117,17 @@ class VoiceAssistant:
             "ask_question": ["question", "ask"],
             "get_time_and_date": ["time", "date"],
             "set_alarm": ["alarm"],
+<<<<<<< HEAD
             "search_web": ["search"],
             "get_weather": ["weather"]
+=======
+            "get_weather": ["weather"],
+            "fetch_news": ["news", "headlines"],  
+            "home_automation": ["turn on", "turn off", "set temperature"], 
+            "play_song": ["play", "song", "music", "spotify"], 
+
+
+>>>>>>> master
         }
 
         for intent, keywords in intents.items():
@@ -104,8 +136,6 @@ class VoiceAssistant:
                     return intent
 
         return None
-
-# device_index=1
 
     def recognize_speech(self):
         recognizer = sr.Recognizer()
@@ -142,6 +172,18 @@ class VoiceAssistant:
                 except:
                     pass
 
+
+    def extract_song_name_from_command(self, command):
+        doc = self.nlp(command)
+        # Get all the noun chunks in the command
+        noun_chunks = list(doc.noun_chunks)
+        # Assume the song name is the longest noun chunk
+        song_name = max(noun_chunks, key=len)
+        return str(song_name)
+
+    ######################################################
+    # ARDEN VA TASKS
+    ######################################################
     def open_website(self, command):
         if 'google' in command:
             webbrowser.open('https://www.google.com')
@@ -184,6 +226,18 @@ class VoiceAssistant:
         output = output.strip().replace('\n', '')
         print(output)
         self.speak_text(f"Answer: {output}")
+
+    def play_song(self, song_name):
+        """Play a song on Spotify"""
+        results = self.spotify.search(q=song_name, limit=1)
+        if results['tracks']['items']:                # Parse the song name from the command, e.g., "play Bohemian Rhapsody on Spotify"
+                song_name = self.extract_song_name_from_command(command)
+                self.play_song(song_name)
+            uri = results['tracks']['items'][0]['uri']
+            self.spotify.start_playback(uris=[uri])
+            self.speak_text(f"Playing {song_name} on Spotify")
+        else:
+            self.speak_text(f"Could not find {song_name} on Spotify")
 
     def get_current_time_and_date(self):
         now = datetime.datetime.now()
@@ -243,6 +297,52 @@ class VoiceAssistant:
         else:
             return None
 
+<<<<<<< HEAD
+=======
+    # Very much WIP 
+    def handle_home_automation(self, command):
+        if "light" in command:
+            entity_id = "light.living_room"
+        elif "thermostat" in command:
+            entity_id = "climate.living_room"
+
+        if "turn on" in command:
+            service = "turn_on"
+        elif "turn off" in command:
+            service = "turn_off"
+
+        # Make the API request to Home Assistant
+        url = f"http://{self.HA_Addr}:8123/api/services/{entity_id}/{service}"
+        headers = {
+            "Authorization": "Bearer YOUR_LONG_LIVED_ACCESS_TOKEN",
+            "content-type": "application/json",
+        }
+        response = requests.post(url, headers=headers)
+
+        if response.status_code == 200:
+            self.speak_text(f"Successfully executed the command.")
+        else:
+            self.speak_text(f"Failed to execute the command.")
+
+    def fetch_news(self, source='the-verge', number_of_articles=5):
+        base_url = "https://newsapi.org/v2/top-headlines?"
+        complete_url = f"{base_url}sources={source}&apiKey={self.newsapi_api_key}"
+        response = requests.get(complete_url)
+
+        if response.status_code == 200:
+            data = response.json()
+            articles = data["articles"]
+            news = []
+
+            for i in range(min(len(articles), number_of_articles)):
+                news.append(f"{articles[i]['title']}. {articles[i]['description']}")
+
+            return news
+        else:
+            return None
+
+    # EXECUTE TASK 
+>>>>>>> master
     def execute_task(self, command):
         intent = self.get_intent(command)
         if intent:
@@ -258,7 +358,8 @@ class VoiceAssistant:
                 print(time_and_date)
                 self.speak_text(time_and_date)
             elif intent == "get_weather":
-                city = "Houston"  # Replace this with the desired city or parse the city name from the command
+                # city = "Houston"  # Replace this with the desired city or parse the city name from the command
+                city = self.city 
                 weather_info = self.get_weather(city, self.openweathermap_api_key)
                 if weather_info:
                     response = f"The weather in {city} is as follows: Temperature: {weather_info['temperature']}°C, Humidity: {weather_info['humidity']}%, Pressure: {weather_info['pressure']} hPa, Description: {weather_info['description']}."
@@ -271,9 +372,26 @@ class VoiceAssistant:
                 # Parse the time from the command, e.g., "set alarm at 9:30 AM"
                 time_str = self.extract_time_from_command
                 self.set_alarm(time_str)
+            elif intent == "fetch_news":
+                # You can parse the source or the number of articles from the command if necessary
+                news = self.fetch_news()
+                if news:
+                    for article in news:
+                        print(article)
+                        self.speak_text(article)  # Use your TTS function to speak the article
+                else:
+                    print("Failed to fetch news.")
+                    self.speak_text("I'm sorry, I couldn't fetch the news") 
 
+<<<<<<< HEAD
             elif intent == "search_web":
                 self.open_website(command)
+=======
+            elif intent == "play_song":
+                # Parse the song name from the command, e.g., "play Bohemian Rhapsody on Spotify"
+                song_name = self.extract_song_name_from_command(command)
+                self.play_song(song_name)
+>>>>>>> master
         else:
             response_text = self.chatgpt_chain.predict(human_input=command)
             print(response_text)
@@ -283,128 +401,19 @@ class VoiceAssistant:
             #self.speak_text(f"Apologies command not recognized")
             #engine.runAndWait()
 
-# Usage example:
-assistant = VoiceAssistant()
-
-while True:
-    assistant.listen_for_wake_word()
-    print("Wake word detected!")
-    assistant.speak_text("How can I help you?")
-    command = assistant.recognize_speech()
-    if command:
-        assistant.execute_task(command)
-    else: 
-        assistant.speak_text("Sorry I did not hear your command")
 
 
-# openai.api_key = api_key
+if __name__ == "__main__":
 
+    assistant = ArdenVA()
 
-# def read_config():
-#     config = configparser.ConfigParser()
-#     config.read("config.ini")
-#     return config
+    while True:
+        assistant.listen_for_wake_word()
+        print("Wake word detected!")
+        assistant.speak_text("How can I help you?")
+        command = assistant.recognize_speech()
+        if command:
+            assistant.execute_task(command)
+        else: 
+            assistant.speak_text("Sorry I did not hear your command")
 
-
-
-# def speak_text(text):
-#     engine = pyttsx3.init()
-#     # Get the list of available voices
-#     voices = engine.getProperty('voices')
-#     engine.setProperty('voice', voices[17].id)
-#     engine.say(text)
-#     engine.runAndWait()
-
-# def recognize_speech():
-#     recognizer = sr.Recognizer()
-#     with sr.Microphone() as source:
-#         print("Listening...")
-#         audio = recognizer.listen(source)
-#         try:
-#             #command = transcribe_deepspeech(audio)
-#             command = recognizer.recognize_google(audio)
-#             return command.lower()
-#         except:
-#             return None
-
-# def listen_for_wake_word(wake_word):
-#     recognizer = sr.Recognizer()
-#     with sr.Microphone() as source:
-#         while True:
-#             print("Waiting for wake word...")
-#             audio = recognizer.listen(source)
-            
-#             try:
-#                 # speech = transcribe_deepspeech(audio)
-#                 speech = recognizer.recognize_google(audio)
-#                 print("Heard:", speech)
-#                 if wake_word.lower() in speech.lower():
-#                     return
-#             except:
-#                 pass
-
-# def open_website(command):
-#     if 'google' in command:
-#         webbrowser.open('https://www.google.com')
-#     elif 'webservices' in command: 
-#         webbrowser.open('https://kuma.billbert.co/status/webservices')
-#     # Add more websites as needed
-
-# def ask_chatgpt(command):
-#     completion = openai.ChatCompletion.create(
-#         model="gpt-3.5-turbo",
-#         messages=[
-#             {"role": "user", "content": command}
-#         ]
-#     )
-#     output = completion.choices[0].message.content
-#     output = output.strip().replace('\n', '')
-#     print(output)
-#     speak_text(f"Answer: {output}")
-
-# def execute_task(command):
-#     # if 'light' in command:
-#     #     control_lights(command)
-#     if 'open' in command:
-#         open_website(command)
-#     elif 'question' in command:
-#         ask_chatgpt(command)
-#     else: 
-#         speak_text(f"Apologies command not recognized")
-
-# if __name__ == "__main__":
-#     wake_word = "Arden"
-
-#     while True:
-#         listen_for_wake_word(wake_word)
-#         print("Wake word detected!")
-#         speak_text("How can I help you?")
-
-#         command = recognize_speech()
-#         if command:
-#             print("You said:", command)
-#             speak_text(f"Executing: {command}")
-#             execute_task(command)
-#         else:
-#             print("Couldn't recognize your command.")
-#             speak_text("I'm sorry, I couldn't recognize your command.")
-# model_path = './deepspeech/deepspeech-0.9.3-models.pbmm'
-# scorer_path = './deepspeech/deepspeech-0.9.3-models.scorer'
-
-# def transcribe_deepspeech(audio_data):
-#     print("Entered DeepSpeech")
-#     model = deepspeech.Model('deepspeech-0.9.3-models.pbmm')
-#     model.enableExternalScorer('deepspeech-0.9.3-models.scorer')
-
-#     # Adjust parameters
-#     model.setBeamWidth(500)
-#     model.setScorerAlphaBeta(alpha=0.75, beta=1.85)
-
-#     # Convert SpeechRecognition's audio data to the format required by DeepSpeech
-#     buffer = np.frombuffer(audio_data.frame_data, np.int16)
-
-#     # Perform speech-to-text using DeepSpeech
-#     text = model.stt(buffer)
-
-#     print(f"Deepspeech transcribed: {text}")
-#     return text

@@ -2,4 +2,9 @@ __*
 [0-9]
 o_ai_api.py
 .env
+<<<<<<< HEAD
 config.ini
+=======
+config.ini
+*.wav
+>>>>>>> master
