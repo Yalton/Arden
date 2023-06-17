@@ -2,3 +2,4 @@ __*
 [0-9]
 o_ai_api.py
 .env
+config.ini

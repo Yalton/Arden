@@ -13,6 +13,10 @@ import spacy
 from ctypes import *
 import subprocess
 import shlex
+from langchain import OpenAI, ConversationChain, LLMChain, PromptTemplate
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.utilities import SearxSearchWrapper
+
 
 # Set the error handler function to suppress ALSA errors.
 def alsa_error_handler(_, __, ___, ____, _____):
@@ -27,6 +31,21 @@ alsa_error_handler_func = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_ch
 # Set the error handler function.
 alsa_lib.snd_lib_error_set_handler(alsa_error_handler_func)
 
+template = """Assistant is a large language model trained by OpenAI.
+
+Assistant is designed to be able to assist with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. As a language model, Assistant is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.
+
+Assistant is constantly learning and improving, and its capabilities are constantly evolving. It is able to process and understand large amounts of text, and can use this knowledge to provide accurate and informative responses to a wide range of questions. Additionally, Assistant is able to generate its own text based on the input it receives, allowing it to engage in discussions and provide explanations and descriptions on a wide range of topics.
+
+Overall, Assistant is a powerful tool that can help with a wide range of tasks and provide valuable insights and information on a wide range of topics. Whether you need help with a specific question or just want to have a conversation about a particular topic, Assistant is here to assist.
+
+Assistant is aware that human input is being transcribed from audio and as such there may be some errors in the transcription. It will attempt to account for some words being swapped with similar-sounding words or phrases. Assistant will also keep responses concise, because human attention spans are more limited over the audio channel since it takes time to listen to a response.
+
+{history}
+Human: {human_input}
+Assistant:"""
+
+
 class VoiceAssistant:
     def __init__(self):
         self.nlp = spacy.load("en_core_web_sm")
@@ -34,6 +53,20 @@ class VoiceAssistant:
         self.openweathermap_api_key = self.config.get("API_KEYS", "OpenWeatherMap")
         openai.api_key = self.config.get("API_KEYS", "OpenAI")
         self.wake_word = "Arden"  # Set your wake word here
+
+        prompt = PromptTemplate(
+        input_variables=["history", "human_input"], 
+        template=template
+        )
+
+
+        self.chatgpt_chain = LLMChain(
+            llm=OpenAI(temperature=0, openai_api_key=self.config.get("API_KEYS", "OpenAI")), 
+            prompt=prompt, 
+            verbose=True, 
+            memory=ConversationBufferWindowMemory(k=2),
+        )
+
 
     def read_config(self):
         config = configparser.ConfigParser()
@@ -61,6 +94,7 @@ class VoiceAssistant:
             "ask_question": ["question", "ask"],
             "get_time_and_date": ["time", "date"],
             "set_alarm": ["alarm"],
+            "search_web": ["search"],
             "get_weather": ["weather"]
         }
 
@@ -113,6 +147,31 @@ class VoiceAssistant:
             webbrowser.open('https://www.google.com')
         elif 'webservices' in command:
             webbrowser.open('https://kuma.billbert.co/status/webservices')
+
+
+    def open_website(self, command):
+        # Process the text
+        doc = self.nlp(command)
+
+        # Iterate over the tokens in the text
+        for i, token in enumerate(doc):
+            # Check if the token is 'for'
+            if token.text == 'for':
+                # Join and print all the tokens from 'for' to the end of the sentence
+                result = ' '.join([token.text for token in doc[i+1:]])
+
+        print(result)
+
+        search = SearxSearchWrapper(searx_host="https://searx.billbert.co/")
+        results = search.results(result, num_results=1, categories='science', time_range='year')
+        for item in results:
+            snippet = item['snippet']
+            title = item['title']
+
+            print(f"Page Title: {title}")
+            print(f"Content: {snippet}")
+            self.speak_text(f"{snippet}")
+            
 
     def ask_chatgpt(self, command):
         completion = openai.ChatCompletion.create(
@@ -184,7 +243,6 @@ class VoiceAssistant:
         else:
             return None
 
-
     def execute_task(self, command):
         intent = self.get_intent(command)
         if intent:
@@ -214,8 +272,16 @@ class VoiceAssistant:
                 time_str = self.extract_time_from_command
                 self.set_alarm(time_str)
 
+            elif intent == "search_web":
+                self.open_website(command)
         else:
-            self.speak_text(f"Apologies command not recognized")
+            response_text = self.chatgpt_chain.predict(human_input=command)
+            print(response_text)
+            self.speak_text(response_text)
+
+
+            #self.speak_text(f"Apologies command not recognized")
+            #engine.runAndWait()
 
 # Usage example:
 assistant = VoiceAssistant()

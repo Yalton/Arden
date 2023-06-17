@@ -9,3 +9,4 @@ configparser
 pyttsx3
 deepspeech
 spacy
+langchain
