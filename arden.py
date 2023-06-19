@@ -31,7 +31,6 @@ alsa_error_handler_func = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_ch
 # Set the error handler function.
 alsa_lib.snd_lib_error_set_handler(alsa_error_handler_func)
 
-<<<<<<< HEAD
 template = """Assistant is a large language model trained by OpenAI.
 
 Assistant is designed to be able to assist with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. As a language model, Assistant is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.
@@ -48,12 +47,6 @@ Assistant:"""
 
 
 class VoiceAssistant:
-=======
-######################################################
-# ARDEN VA CLASS 
-######################################################
-class ArdenVA:
->>>>>>> master
     def __init__(self):
         self.nlp = spacy.load("en_core_web_sm")
         self.config = self.read_config()
@@ -117,17 +110,12 @@ class ArdenVA:
             "ask_question": ["question", "ask"],
             "get_time_and_date": ["time", "date"],
             "set_alarm": ["alarm"],
-<<<<<<< HEAD
-            "search_web": ["search"],
-            "get_weather": ["weather"]
-=======
             "get_weather": ["weather"],
             "fetch_news": ["news", "headlines"],  
             "home_automation": ["turn on", "turn off", "set temperature"], 
             "play_song": ["play", "song", "music", "spotify"], 
 
 
->>>>>>> master
         }
 
         for intent, keywords in intents.items():
@@ -297,8 +285,6 @@ class ArdenVA:
         else:
             return None
 
-<<<<<<< HEAD
-=======
     # Very much WIP 
     def handle_home_automation(self, command):
         if "light" in command:
@@ -342,7 +328,6 @@ class ArdenVA:
             return None
 
     # EXECUTE TASK 
->>>>>>> master
     def execute_task(self, command):
         intent = self.get_intent(command)
         if intent:
@@ -382,16 +367,12 @@ class ArdenVA:
                 else:
                     print("Failed to fetch news.")
                     self.speak_text("I'm sorry, I couldn't fetch the news") 
-
-<<<<<<< HEAD
             elif intent == "search_web":
                 self.open_website(command)
-=======
             elif intent == "play_song":
                 # Parse the song name from the command, e.g., "play Bohemian Rhapsody on Spotify"
                 song_name = self.extract_song_name_from_command(command)
                 self.play_song(song_name)
->>>>>>> master
         else:
             response_text = self.chatgpt_chain.predict(human_input=command)
             print(response_text)
