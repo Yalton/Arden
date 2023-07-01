@@ -16,6 +16,8 @@ import shlex
 from langchain import OpenAI, ConversationChain, LLMChain, PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.utilities import SearxSearchWrapper
+import spotipy
+from spotipy import SpotifyOAuth
 
 
 # Set the error handler function to suppress ALSA errors.
@@ -46,7 +48,7 @@ Human: {human_input}
 Assistant:"""
 
 
-class VoiceAssistant:
+class ArdenVA:
     def __init__(self):
         self.nlp = spacy.load("en_core_web_sm")
         self.config = self.read_config()
@@ -58,14 +60,17 @@ class VoiceAssistant:
         self.HA_Addr = self.config.get("Misc", "HomeAssistantIP")
 
         # Add Spotify's client_id, client_secret and redirect_uri to your config file
-        self.spotify_client_id = self.config.get("Spotify", "SpotifyClientID")
-        self.spotify_client_secret = self.config.get("Spotify", "SpotifyClientSecret")
-        self.spotify_redirect_uri = self.config.get("Spotify", "SpotifyRedirectUri")
+        # self.spotify_client_id = self.config.get("Spotify", "SpotifyClientID")
+        # self.spotify_client_secret = self.config.get("Spotify", "SpotifyClientSecret")
+        # self.spotify_redirect_uri = self.config.get("Spotify", "SpotifyRedirectUri")
         # Set up the SpotiPy client
-        self.spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=self.spotify_client_id,
-                                                                client_secret=self.spotify_client_secret,
-                                                                redirect_uri=self.spotify_redirect_uri,
-                                                                scope="user-read-playback-state, user-modify-playback-state"))
+        # try: 
+        #     self.spotify = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=self.spotify_client_id,
+        #                                                             client_secret=self.spotify_client_secret,
+        #                                                             redirect_uri=self.spotify_redirect_uri,
+        #                                                             scope="user-read-playback-state, user-modify-playback-state"))
+        # except: 
+        #     print("Spotify Oath failed")
 
         prompt = PromptTemplate(
         input_variables=["history", "human_input"], 
@@ -114,8 +119,7 @@ class VoiceAssistant:
             "fetch_news": ["news", "headlines"],  
             "home_automation": ["turn on", "turn off", "set temperature"], 
             "play_song": ["play", "song", "music", "spotify"], 
-
-
+            "search_web": ["search", "browse"], 
         }
 
         for intent, keywords in intents.items():
@@ -179,7 +183,7 @@ class VoiceAssistant:
             webbrowser.open('https://kuma.billbert.co/status/webservices')
 
 
-    def open_website(self, command):
+    def search_web(self, command):
         # Process the text
         doc = self.nlp(command)
 
@@ -188,12 +192,12 @@ class VoiceAssistant:
             # Check if the token is 'for'
             if token.text == 'for':
                 # Join and print all the tokens from 'for' to the end of the sentence
-                result = ' '.join([token.text for token in doc[i+1:]])
+                query = ' '.join([token.text for token in doc[i+1:]])
 
-        print(result)
+        print(query)
 
         search = SearxSearchWrapper(searx_host="https://searx.billbert.co/")
-        results = search.results(result, num_results=1, categories='science', time_range='year')
+        results = search.results(query, num_results=1, categories='science', time_range='year')
         for item in results:
             snippet = item['snippet']
             title = item['title']
@@ -215,17 +219,17 @@ class VoiceAssistant:
         print(output)
         self.speak_text(f"Answer: {output}")
 
-    def play_song(self, song_name):
-        """Play a song on Spotify"""
-        results = self.spotify.search(q=song_name, limit=1)
-        if results['tracks']['items']:                # Parse the song name from the command, e.g., "play Bohemian Rhapsody on Spotify"
-                song_name = self.extract_song_name_from_command(command)
-                self.play_song(song_name)
-            uri = results['tracks']['items'][0]['uri']
-            self.spotify.start_playback(uris=[uri])
-            self.speak_text(f"Playing {song_name} on Spotify")
-        else:
-            self.speak_text(f"Could not find {song_name} on Spotify")
+    # def play_song(self, song_name):
+    #     """Play a song on Spotify"""
+    #     results = self.spotify.search(q=song_name, limit=1)
+    #     if results['tracks']['items']:                # Parse the song name from the command, e.g., "play Bohemian Rhapsody on Spotify"
+    #             song_name = self.extract_song_name_from_command(command)
+    #             self.play_song(song_name)
+    #             uri = results['tracks']['items'][0]['uri']
+    #             self.spotify.start_playback(uris=[uri])
+    #             self.speak_text(f"Playing {song_name} on Spotify")
+    #     else:
+    #         self.speak_text(f"Could not find {song_name} on Spotify")
 
     def get_current_time_and_date(self):
         now = datetime.datetime.now()
@@ -369,10 +373,10 @@ class VoiceAssistant:
                     self.speak_text("I'm sorry, I couldn't fetch the news") 
             elif intent == "search_web":
                 self.open_website(command)
-            elif intent == "play_song":
-                # Parse the song name from the command, e.g., "play Bohemian Rhapsody on Spotify"
-                song_name = self.extract_song_name_from_command(command)
-                self.play_song(song_name)
+            # elif intent == "play_song":
+            #     # Parse the song name from the command, e.g., "play Bohemian Rhapsody on Spotify"
+            #     song_name = self.extract_song_name_from_command(command)
+            #     self.play_song(song_name)
         else:
             response_text = self.chatgpt_chain.predict(human_input=command)
             print(response_text)
@@ -387,7 +391,7 @@ class VoiceAssistant:
 if __name__ == "__main__":
 
     assistant = ArdenVA()
-
+    print("Assistant Initialized")
     while True:
         assistant.listen_for_wake_word()
         print("Wake word detected!")
